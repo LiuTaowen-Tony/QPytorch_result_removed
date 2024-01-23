@@ -1,4 +1,5 @@
 from os import path
+import os
 from typing import Optional
 
 from data import MyDataModule
@@ -175,12 +176,12 @@ class LitClassifier(LightningModule):
                  on_step=True, prog_bar=True)
         loss = loss * args.loss_scale
         opt = self.optimizers()
-        torch.nn.utils.clip_grad_norm_(self.backbone.parameters(), args.clip)
         self.backbone.zero_grad()
         self.manual_backward(loss)
         if args.mix_precision:
             self.model_grads_to_master_grads()
         self.master_grad_apply(lambda x: x / args.loss_scale)
+        torch.nn.utils.clip_grad_norm_(self.reference_model.parameters(), args.clip)
         opt.step()
         if args.mix_precision:
             self.master_params_to_model_params()
@@ -227,6 +228,7 @@ def make_version_name(args):
         f"lr{args.learning_rate}"
         f"b{args.batch_size}"
         f"clip{args.clip}"
+        f"momentum{args.momentum}"
         f"_norm{args.batchnorm}"
     )
 
@@ -245,7 +247,9 @@ def cli_main():
     # trainer.test(model, datamodule=datamodule)
     trainer.fit(model, datamodule=datamodule)
     result, *_ = trainer.test(ckpt_path="best", dataloaders=datamodule.train_dataloader())
-    with open(f"result.csv", "a+") as f:
+    csv_path = f"{args.log_path}/result.csv"
+    os.makedirs(args.log_path, exist_ok=True)
+    with open(csv_path, "a+") as f:
         to_write = {}
         to_write.update(args.__dict__)
         to_write.update(result)

@@ -1,0 +1,25 @@
+args: !!python/object:argparse.Namespace
+  activation_bw: 3
+  activation_ew: 3
+  activation_round: nearest
+  batch_size: 128
+  batchnorm: id
+  check_number_ranges: false
+  checkpoint_path: null
+  clip: 1
+  epochs: 100
+  error_bw: 3
+  error_ew: 3
+  error_round: nearest
+  gradient_bw: 3
+  gradient_ew: 3
+  gradient_round: nearest
+  learning_rate: 0.1
+  log_path: mix_precision_log
+  loss_scale: 1000
+  mix_precision: true
+  momentum: 0
+  seed: 0
+  weight_bw: 3
+  weight_ew: 3
+  weight_round: nearest
