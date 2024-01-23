@@ -241,7 +241,7 @@ def cli_main():
     print(args)
     logger = TensorBoardLogger(
         args.log_path, name=make_version_name(args), )
-    trainer = L.Trainer(accelerator="gpu", max_epochs=100,
+    trainer = L.Trainer(accelerator="gpu", max_epochs=args.epochs,
                         logger=logger, enable_progress_bar=True)
     datamodule = MyDataModule(args.batch_size)
     # trainer.test(model, datamodule=datamodule)

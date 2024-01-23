@@ -177,23 +177,68 @@ class Manager:
 
     def run(self):
         threading.Thread(target=self.task_assigner.run).start()
-        httpd = HTTPServer(('localhost', 4443), self.request_handler_factory)
+        httpd = HTTPServer(('0.0.0.0', 4443), self.request_handler_factory)
         httpd.serve_forever()
 
 
 # Usage
 if __name__ == "__main__":
-    worker_start_script = "python worker.py"
+
+
+    base_params = {
+        "learning-rate": 0.1,
+        "batch-size": 64,
+        "epochs": 100,
+        "seed": 0,
+        "clip": 0.1,
+        "weight-round": "nearest",
+        "error-round": "nearest",
+        "gradient-round": "nearest",
+        "activation-round": "nearest",
+        "weight-ew": 2,
+        "error-ew": 4,
+        "gradient-ew": 4,
+        "activation-ew": 2,
+        "weight-bw": 3,
+        "error-bw": 3,
+        "gradient-bw": 3,
+        "activation-bw": 3,
+        "batchnorm": "id",
+        "loss-scale": 1,
+        "momentum": 0.7,
+        "check-number-ranges": True,
+        "mix-precision": True,
+        "log-path": "results/loss_scale_batchnorm_clip_experiment",
+    }
+    params = []
+    for rounding in ["nearest", "stochastic"]:
+        for loss_scale in [1, 5, 10, 25, 50, 100, 500, 1024, 2048, 4096, 16384, 32768, 65546, 131072]:
+            for batchnorm in ["id", "batchnorm"]:
+                for clip in [0.01, 0.1, 1]:
+                    this_param = base_params.copy()
+                    this_param["weight-round"] = rounding
+                    this_param["error-round"] = rounding
+                    this_param["gradient-round"] = rounding
+                    this_param["activation-round"] = rounding
+                    this_param["loss-scale"] = loss_scale
+                    this_param["batchnorm"] = batchnorm
+                    this_param["clip"] = clip
+                    params.append(this_param)
+    worker_start_script = "bash ~/run_one.sh"
+
+    #workers = [f"gpu{i:02}" for i in range(33, 34)]
+    workers = [f"gpu{i:02}" for i in range(1, 19)]
+    workers += [f"gpu{i:02}" for i in [26, 27, 28, 29, 30, 31, 33, 34, 35]]
 
     def make_command(param, worker):
         param_str = ""
         for key, value in param.items():
-            param_str += f"--{key} {value}"
-        return f"tmux new-session -d  \"{worker_start_script} {param_str}\""
-
+            param_str += f"--{key} {value} "
+        return f"ssh {worker} \"{worker_start_script} {worker} {param_str}\""
+    
     def worker_starter_factory(logger): return CmdWorkStarter(
-        "python worker.py", logger, make_command=make_command)
+        worker_start_script, logger, make_command=make_command)
     manager = Manager(work_starter_factory=worker_starter_factory)
-    manager.add_tasks([{'a': 1}, {'a': 2}])
-    manager.add_workers(['1', '2'])
+    manager.add_tasks(params)
+    manager.add_workers(workers)
     manager.run()

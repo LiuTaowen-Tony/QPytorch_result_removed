@@ -5,3 +5,7 @@ Ninja
 torchvision
 pebble
 lightning
+altair
+tensorboard
+altair_saver
+
