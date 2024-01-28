@@ -205,16 +205,16 @@ if __name__ == "__main__":
         "activation-bw": 3,
         "batchnorm": "id",
         "loss-scale": 1,
-        "momentum": 0.7,
+        "momentum": 0,
         "check-number-ranges": True,
         "mix-precision": True,
-        "log-path": "results/loss_scale_batchnorm_clip_experiment",
+        "log-path": "results/loss_scale",
     }
     params = []
     for rounding in ["nearest", "stochastic"]:
-        for loss_scale in [1, 5, 10, 25, 50, 100, 500, 1024, 2048, 4096, 16384, 32768, 65546, 131072]:
+        for loss_scale in [128, 256, 512, 1024]:
             for batchnorm in ["id", "batchnorm"]:
-                for clip in [0.01, 0.1, 1]:
+                for clip in [65536]:
                     this_param = base_params.copy()
                     this_param["weight-round"] = rounding
                     this_param["error-round"] = rounding

@@ -1,3 +1,5 @@
+finished_tasks.json
+plot.png
 qtorch/quant/dist
 qtorch/playground*
 qtorch/demo*
@@ -26,3 +28,4 @@ lightning_logs/
 .venv/
 __pycache__/*
 results/**
+results_new/**

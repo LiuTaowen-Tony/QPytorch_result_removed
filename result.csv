@@ -1,3 +1,4 @@
+
 64,0.1,0.9,2048,2,4,2,4,3,3,3,3,nearest,nearest,nearest,nearest,,results/normvsbatchnorm_lossscale_clip,200,1,False,True,0.01,id,1.1656122207641602,0.5851399898529053
 64,0.1,0.9,2048,2,4,2,4,3,3,3,3,stochastic,stochastic,stochastic,stochastic,,results/normvsbatchnorm_lossscale_clip,200,1,False,True,0.01,id,1.9011420011520386,0.3175800144672394
 64,0.1,0.9,2048,2,4,2,4,3,3,3,3,nearest,nearest,nearest,nearest,,results/normvsbatchnorm_lossscale_clip,200,0,False,True,0.01,batchnorm,0.8288772702217102,0.6991999745368958

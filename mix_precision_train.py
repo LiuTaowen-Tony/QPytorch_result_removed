@@ -162,14 +162,15 @@ class LitClassifier(LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        if self.trainer.is_last_batch:
+        if True:
+        #if self.trainer.is_last_batch:
             m = copy.deepcopy(self.backbone)
             stats = instrument(m)
             y_hat =m(x)
             loss = F.cross_entropy(y_hat, y)
             loss = loss * args.loss_scale
             loss.backward()
-            visualise(stats, dir=f"{args.log_path}/{make_version_name(self.args)}/test{self.current_epoch}.png")
+            visualise(stats, dir=f"{args.log_path}/{make_version_name(self.args)}/test{self.current_epoch}_{batch_idx}.png")
         y_hat = self.backbone(x)
         loss = F.cross_entropy(y_hat, y)
         self.log("train_loss", loss, on_epoch=True,
