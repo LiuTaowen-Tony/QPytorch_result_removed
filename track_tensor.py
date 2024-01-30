@@ -72,14 +72,14 @@ def instrument_terminal(
     stats[name] = module_stats
 
 
-def visualise(stats: Dict[str, Dict[str, float]], subnormal: bool = False, dir="test.png") -> None:
+def visualise(stats: Dict[str, Dict[str, float]], loss, subnormal: bool = False,dir="test.png") -> None:
     df = pd.DataFrame(stats)
     df = df.stack().to_frame("scale (log₂)").reset_index(names=["type", "op"])
-    chart = plot(df, subnormal)
+    chart = plot(df, loss, subnormal)
     chart.save(dir)
 
 
-def plot(df: pd.DataFrame, subnormal: bool = False):
+def plot(df: pd.DataFrame,loss, subnormal: bool = False):
     is_x_or_grad_x = (df["type"] == "x") | (df["type"] == "grad_x")
     op_order = df[df["type"] == "x"]["op"].tolist()
     colors = ["#6C8EBF", "#FF8000", "#5D8944", "#ED3434"]
@@ -103,7 +103,7 @@ def plot(df: pd.DataFrame, subnormal: bool = False):
         .mark_line()
         .encode(
             x=alt.X(
-                "scale (log₂):Q",
+                f"scale (log₂) loss({loss}):Q",
                 axis=alt.Axis(orient="top", values=x_range),
                 scale=alt.Scale(domain=[x_range[0], x_range[-1]]),
             ),

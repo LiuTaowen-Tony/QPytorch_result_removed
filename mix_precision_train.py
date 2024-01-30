@@ -10,7 +10,7 @@ from lightning.pytorch.cli import LightningCLI
 from lightning.pytorch.demos.mnist_datamodule import MNIST
 from lightning.pytorch.utilities.imports import _TORCHVISION_AVAILABLE
 
-from sr_experiments.network import PreResNet
+from network import PreResNet
 from torch import nn
 from qtorch.number import FloatingPoint
 from qtorch.quant import Quantizer, quantizer
@@ -29,6 +29,7 @@ import csv
 
 
 from lightning.pytorch.loggers import TensorBoardLogger
+from lightning.pytorch.loggers import WandbLogger
 
 
 rounding_options_choices = ["nearest", "stochastic", ]
@@ -66,8 +67,9 @@ parser.add_argument("--gradient-round", default="nearest",
 parser.add_argument("--activation-round", default="nearest",
                     choices=rounding_options_choices, help='activation rounding method')
 parser.add_argument("--checkpoint-path", default=None, help='checkpoint path')
-parser.add_argument("--log-path", default="mix_precision_log", help='log path')
+parser.add_argument("--log-path", default="results/default", help='log path')
 parser.add_argument("--epochs", type=int, default=100, help='epochs')
+parser.add_argument("--log-variance-steps", type=int, default=100, help='epochs')
 parser.add_argument("--seed", type=int, default=0, help='seed')
 parser.add_argument("--check-number-ranges", type=lambda x: x=="True", default=False, help='track model and check number ranges')
 parser.add_argument("--mix-precision", type=lambda x: x=="True",default=True, help='is mix precision train')
@@ -162,19 +164,11 @@ class LitClassifier(LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        if True:
-        #if self.trainer.is_last_batch:
-            m = copy.deepcopy(self.backbone)
-            stats = instrument(m)
-            y_hat =m(x)
-            loss = F.cross_entropy(y_hat, y)
-            loss = loss * args.loss_scale
-            loss.backward()
-            visualise(stats, dir=f"{args.log_path}/{make_version_name(self.args)}/test{self.current_epoch}_{batch_idx}.png")
+        # if True:
         y_hat = self.backbone(x)
         loss = F.cross_entropy(y_hat, y)
-        self.log("train_loss", loss, on_epoch=True,
-                 on_step=True, prog_bar=True)
+        show_loss = loss.item()
+        self.log("train_loss", loss, on_step=True, prog_bar=True)
         loss = loss * args.loss_scale
         opt = self.optimizers()
         self.backbone.zero_grad()
@@ -187,6 +181,16 @@ class LitClassifier(LightningModule):
         if args.mix_precision:
             self.master_params_to_model_params()
         self._apply_model_weights(self.backbone, self.weight_quant)
+        
+        if batch_idx % args.log_variance_steps == 0:
+            m = copy.deepcopy(self.backbone)
+            stats = instrument(m)
+            y_hat =m(x)
+            util_loss = F.cross_entropy(y_hat, y)
+            util_loss = util_loss * args.loss_scale
+            util_loss.backward()
+            os.makedirs(f"{args.log_path}/image/{make_version_name(self.args)}", exist_ok=True)
+            visualise(stats, loss=show_loss, dir=f"{args.log_path}/image/{make_version_name(self.args)}/test{self.current_epoch}_{batch_idx}.png")
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -240,8 +244,12 @@ def cli_main():
     torch.manual_seed(args.seed)
     model = LitClassifier(args)
     print(args)
-    logger = TensorBoardLogger(
-        args.log_path, name=make_version_name(args), )
+    logger = WandbLogger(
+        project=args.log_path, 
+        name=make_version_name(args),
+        log_model="all",)
+    for k, v in args.__dict__.items():
+        logger.experiment.config[k] = v
     trainer = L.Trainer(accelerator="gpu", max_epochs=args.epochs,
                         logger=logger, enable_progress_bar=True)
     datamodule = MyDataModule(args.batch_size)

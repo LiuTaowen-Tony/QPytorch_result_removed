@@ -26,10 +26,13 @@ class WorkStarter:
 
 
 class CmdWorkStarter(WorkStarter):
-    def __init__(self, worker_start_script, logger, make_command):
+    def __init__(self, worker_start_script, logger, make_command, timeout=60*60*2):
         self.worker_start_script = worker_start_script
         self.logger = logger
         self.make_command = make_command
+        self.timeout = timeout
+
+
 
     def make_job(self, param, worker):
         def fn():
@@ -189,16 +192,17 @@ if __name__ == "__main__":
         "learning-rate": 0.1,
         "batch-size": 64,
         "epochs": 100,
+        "log-variance-steps": 100,
         "seed": 0,
         "clip": 0.1,
         "weight-round": "nearest",
         "error-round": "nearest",
         "gradient-round": "nearest",
         "activation-round": "nearest",
-        "weight-ew": 2,
+        "weight-ew": 3,
         "error-ew": 4,
         "gradient-ew": 4,
-        "activation-ew": 2,
+        "activation-ew": 3,
         "weight-bw": 3,
         "error-bw": 3,
         "gradient-bw": 3,
@@ -208,11 +212,11 @@ if __name__ == "__main__":
         "momentum": 0,
         "check-number-ranges": True,
         "mix-precision": True,
-        "log-path": "results/loss_scale",
+        "log-path": "newnew_results/gradient_explosion_norm_round",
     }
     params = []
     for rounding in ["nearest", "stochastic"]:
-        for loss_scale in [128, 256, 512, 1024]:
+        for loss_scale in [ 1024]:
             for batchnorm in ["id", "batchnorm"]:
                 for clip in [65536]:
                     this_param = base_params.copy()
@@ -227,8 +231,9 @@ if __name__ == "__main__":
     worker_start_script = "bash ~/run_one.sh"
 
     #workers = [f"gpu{i:02}" for i in range(33, 34)]
-    workers = [f"gpu{i:02}" for i in range(1, 19)]
-    workers += [f"gpu{i:02}" for i in [26, 27, 28, 29, 30, 31, 33, 34, 35]]
+    workers = [f"gpu{i:02}" for i in [26, 27, 28, 29, 30, 31, 33, 34, 35]]
+    # workers = [f"gpu{i:02}" for i in range(1, 19)]
+    # workers = [f"gpu{i:02}" for i in [30, 33, 34, 35]]
 
     def make_command(param, worker):
         param_str = ""
